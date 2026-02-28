@@ -384,9 +384,6 @@ jobs:
         run: |
           cd /build
           
-          # Clean any previous build artifacts
-          lb clean --purge
-          
           # Build the ISO
           lb build 2>&1 | tee build.log
           
