@@ -35,7 +35,8 @@ jobs:
             grub-pc-bin \
             grub-efi-amd64-bin \
             isolinux \
-            syslinux-efi
+            syslinux-efi \
+            cpio
       
       - name: Set up build environment
         run: |
@@ -57,7 +58,12 @@ jobs:
           if [ -d "$GITHUB_WORKSPACE/includes.chroot" ]; then
             cp -r $GITHUB_WORKSPACE/includes.chroot /build/config/ 2>/dev/null || :
           fi
-      
+          
+      - name: Clean previous build artifacts
+        run: |
+          cd /build
+          lb clean --purge
+          
       - name: Initialize live-build configuration
         run: |
           cd /build
@@ -82,8 +88,12 @@ jobs:
             --parent-archive-areas "main contrib non-free" \
             --security true \
             --updates true \
-            --cache true \
-            --clean true
+            --cache true
+
+      - name: Verify config directory
+        run: |
+            ls -la /build
+            ls -la /build/config/ || echo "config/ directory missing!"
       
       - name: Create package lists
         run: |
