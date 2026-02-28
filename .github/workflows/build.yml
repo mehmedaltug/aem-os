@@ -164,6 +164,10 @@ jobs:
           
           # Install Homebrew dependencies
           apt-get install -y build-essential curl file git procps
+
+          # Remove Firefox-ESR
+          apt-get remove --purge -y firefox-esr
+          apt-get autoremove
           
           # Download and install Homebrew (non-interactive)
           echo | NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
