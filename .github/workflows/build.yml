@@ -75,7 +75,7 @@ jobs:
           lb config \
             -a amd64 \
             -d trixie \
-            --archive-areas "main contrib non-free" \
+            --archive-areas "main contrib non-free non-free-firmware" \
             --bootloader grub-efi \
             --debian-installer false \
             --distribution trixie \
@@ -85,7 +85,7 @@ jobs:
             --memtest none \
             --mode debian \
             --parent-distribution bookworm \
-            --parent-archive-areas "main contrib non-free" \
+            --parent-archive-areas "main contrib non-free non-free-firmware" \
             --security true \
             --updates true \
             --cache true
