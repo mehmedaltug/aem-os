@@ -1,0 +1,447 @@
+name: Build Custom Debian ISO
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:  # Allow manual triggering for testing
+
+jobs:
+  build-iso:
+    name: Build ISO Image
+    runs-on: ubuntu-latest
+    container:
+      image: debian:trixie-slim
+      options: --privileged  # Required for some live-build operations
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            live-build \
+            debootstrap \
+            squashfs-tools \
+            xorriso \
+            curl \
+            git \
+            ca-certificates \
+            sudo \
+            fakeroot \
+            mtools \
+            dosfstools \
+            grub-pc-bin \
+            grub-efi-amd64-bin \
+            isolinux \
+            syslinux-efi
+      
+      - name: Set up build environment
+        run: |
+          # Create build directory
+          mkdir -p /build
+          cd /build
+          
+          # Copy configuration from repository if it exists
+          if [ -d "$GITHUB_WORKSPACE/config" ]; then
+            cp -r $GITHUB_WORKSPACE/config /build/
+          fi
+          
+          # Copy hooks from repository if they exist
+          if [ -d "$GITHUB_WORKSPACE/hooks" ]; then
+            cp -r $GITHUB_WORKSPACE/hooks /build/config/ 2>/dev/null || :
+          fi
+          
+          # Copy includes from repository if they exist
+          if [ -d "$GITHUB_WORKSPACE/includes.chroot" ]; then
+            cp -r $GITHUB_WORKSPACE/includes.chroot /build/config/ 2>/dev/null || :
+          fi
+      
+      - name: Initialize live-build configuration
+        run: |
+          cd /build
+          
+          # Extract version from release tag
+          VERSION=${GITHUB_REF_NAME#v}  # Remove 'v' prefix if present
+          VERSION=${VERSION:-1.0.0}      # Default if not set
+          
+          lb config \
+            -a amd64 \
+            -d trixie \
+            --archive-areas "main contrib non-free" \
+            --bootloader grub-efi \
+            --debian-installer false \
+            --distribution trixie \
+            --iso-application "AEM OS" \
+            --iso-publisher "mehmedaltug" \
+            --iso-volume "AEM_OS-${VERSION}" \
+            --memtest none \
+            --mode debian \
+            --parent-distribution bookworm \
+            --parent-archive-areas "main contrib non-free" \
+            --security true \
+            --updates true \
+            --cache true \
+            --clean true
+      
+      - name: Create package lists
+        run: |
+          cd /build
+          
+          # Create desktop package list
+          mkdir -p config/package-lists
+          cat > config/package-lists/desktop.list.chroot << 'EOF'
+          # Base system
+          task-english
+          task-laptop
+          alsa-utils
+          sudo
+          network-manager
+          network-manager-gnome
+          firmware-linux
+          firmware-iwlwifi
+          firmware-realtek
+          
+          # Minimal GNOME desktop
+          gnome-core
+          gnome-themes-extra
+          gdm3
+          
+          # Printing support
+          cups
+          cups-client
+          cups-filters
+          system-config-printer
+          
+          # Installer
+          calamares
+          calamares-settings-debian
+          
+          # Homebrew dependencies
+          build-essential
+          curl
+          file
+          git
+          python3
+          procps
+          EOF
+          
+          # Create live package list
+          cat > config/package-lists/live.list.chroot << 'EOF'
+          live-boot
+          live-config
+          live-config-systemd
+          live-tools
+          user-setup
+          sudo
+          EOF
+      
+      - name: Create installation hooks
+        run: |
+          cd /build
+          mkdir -p config/hooks/normal
+          
+          # Flatpak and Homebrew installation hook
+          cat > config/hooks/normal/1000-install-flatpak-and-homebrew.chroot << 'EOF'
+          #!/bin/bash
+          
+          # Install Flatpak and GNOME integration
+          apt-get install -y flatpak gnome-software-plugin-flatpak
+          
+          # Add Flathub repository
+          flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo
+          
+          # Install Homebrew dependencies
+          apt-get install -y build-essential curl file git procps
+          
+          # Download and install Homebrew (non-interactive)
+          echo | NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          
+          # Set up Homebrew in system profile
+          cat > /etc/profile.d/homebrew.sh << 'BREW'
+          #!/bin/bash
+          if [ -d /home/linuxbrew/.linuxbrew ]; then
+              eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          fi
+          BREW
+          chmod +x /etc/profile.d/homebrew.sh
+          
+          # Also add to bash.bashrc for interactive shells
+          cat >> /etc/bash.bashrc << 'BASHRC'
+          # Homebrew
+          if [ -d /home/linuxbrew/.linuxbrew ] && [ -n "$BASH_VERSION" ]; then
+              eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          fi
+          BASHRC
+          EOF
+          chmod +x config/hooks/normal/1000-install-flatpak-and-homebrew.chroot
+          
+          # Live user creation hook
+          cat > config/hooks/normal/3000-create-live-user.chroot << 'EOF'
+          #!/bin/bash
+          
+          # Create temporary live user
+          useradd -m -s /bin/bash -G sudo,audio,video,cdrom,plugdev,netdev,dialout live
+          echo "live:live" | chpasswd
+          
+          # Allow passwordless sudo for live user
+          echo "live ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/live-user
+          
+          # Set up automatic login for GDM
+          cat > /etc/gdm3/daemon.conf << GDM
+          [daemon]
+          AutomaticLoginEnable=true
+          AutomaticLogin=live
+          WaylandEnable=false
+          GDM
+          EOF
+          chmod +x config/hooks/normal/3000-create-live-user.chroot
+          
+          # Skip GNOME initial setup
+          cat > config/hooks/normal/4000-skip-gnome-initial-setup.chroot << 'EOF'
+          #!/bin/bash
+          
+          # Skip GNOME initial setup on first boot
+          mkdir -p /etc/skel/.config
+          echo "yes" > /etc/skel/.config/gnome-initial-setup-done
+          
+          # For the live user
+          mkdir -p /home/live/.config
+          echo "yes" > /home/live/.config/gnome-initial-setup-done
+          chown -R live:live /home/live/.config
+          EOF
+          chmod +x config/hooks/normal/4000-skip-gnome-initial-setup.chroot
+      
+      - name: Create Calamares installer configuration
+        run: |
+          cd /build
+          mkdir -p config/includes.chroot/etc/calamares/modules
+          
+          # Create welcome module
+          cat > config/includes.chroot/etc/calamares/modules/welcome.conf << 'EOF'
+          ---
+          name: welcome
+          type: view
+          interface: qtplugin
+          visible: true
+          welcomeStyle: SideBySide
+          showSupportUrl: false
+          showKnownIssuesUrl: false
+          showReleaseNotesUrl: false
+          requirements:
+            required:
+              - storage
+              - ram
+              - root
+              - screen
+              - power
+            requiredStorage: 5.0
+            requiredRam: 1.0
+            check:
+              - storage
+              - ram
+              - root
+              - screen
+              - power
+          EOF
+          
+          # Create users module (THIS IS WHERE USERS SET USERNAME/PASSWORD)
+          cat > config/includes.chroot/etc/calamares/modules/users.conf << 'EOF'
+          ---
+          name: users
+          type: view
+          interface: qtplugin
+          visible: true
+          autologinGroup: autologin
+          doAutologin: true
+          sudoersGroup: sudo
+          setRootPassword: true
+          doReusePassword: true
+          passwordRequirements:
+            minLength: 1
+            maxLength: 0
+            requireNonEmpty: true
+          userShell: /bin/bash
+          EOF
+          
+          # Create partition module
+          cat > config/includes.chroot/etc/calamares/modules/partition.conf << 'EOF'
+          ---
+          name: partition
+          type: view
+          interface: qtplugin
+          visible: true
+          defaultFileSystemType: ext4
+          alwaysShowPartitionLabels: true
+          allowManualPartitioning: true
+          drawNestedPartitions: true
+          enableEncryption: true
+          enableLuksAutomount: true
+          eraseFsFile: true
+          EOF
+          
+          # Create main Calamares settings
+          cat > config/includes.chroot/etc/calamares/settings.conf << 'EOF'
+          ---
+          modules-search: [ /etc/calamares/modules, /usr/lib/calamares/modules ]
+          
+          sequence:
+            - show:
+              - welcome
+              - users
+              - partition
+              - summary
+            - exec:
+              - partition
+              - users
+              - networkcfg
+              - copy
+              - packages
+              - grubcfg
+              - bootloader
+              - services
+              - umount
+          
+          branding: aem-os
+          prompt-install: true
+          dont-chroot: false
+          oem-setup: false
+          disable-cancel: false
+          quit-at-end: true
+          EOF
+      
+      - name: Create branding
+        run: |
+          cd /build
+          mkdir -p config/includes.chroot/usr/share/calamares/branding/aem-os
+          
+          # Create branding descriptor
+          cat > config/includes.chroot/usr/share/calamares/branding/aem-os/branding.desc << 'EOF'
+          componentName:  aem-os
+          
+          strings:
+              productName:         AEM OS
+              shortProductName:    AEMOS
+              version:             1.0
+              shortVersion:        1.0
+              versionedName:       AEM OS 1.0
+              shortVersionedName:  AEMOS 1.0
+              bootloaderEntryName: AEM-OS
+              welcomeMessage:      "Welcome to the AEM OS installer."
+              aboutMessage:        "Thanks for choosing AEM OS.\n\nThis installer will guide you through the setup process."
+          
+          style:
+              sidebarBackground:   "#2c3e50"
+              sidebarText:         "#ffffff"
+              sidebarBackgroundCurrent: "#e67e22"
+          EOF
+        
+      - name: Create desktop shortcut for installer
+        run: |
+          cd /build
+          mkdir -p config/includes.chroot/etc/skel/Desktop
+          
+          cat > config/includes.chroot/etc/skel/Desktop/install-system.desktop << 'EOF'
+          [Desktop Entry]
+          Name=Install System
+          Comment=Install this distribution to your hard disk
+          Exec=sudo -E calamares
+          Icon=system-os-install
+          Terminal=false
+          Type=Application
+          Categories=System;
+          StartupNotify=true
+          EOF
+          
+          # Make executable in hook
+          mkdir -p config/hooks/normal
+          cat > config/hooks/normal/5000-desktop-shortcuts.chroot << 'EOF'
+          #!/bin/bash
+          if [ -f /etc/skel/Desktop/install-system.desktop ]; then
+              chmod +x /etc/skel/Desktop/install-system.desktop
+          fi
+          
+          if [ -d /home/live/Desktop ]; then
+              cp /etc/skel/Desktop/install-system.desktop /home/live/Desktop/
+              chmod +x /home/live/Desktop/install-system.desktop
+              chown -R live:live /home/live/Desktop
+          fi
+          EOF
+          chmod +x config/hooks/normal/5000-desktop-shortcuts.chroot
+      
+      - name: Build the ISO
+        run: |
+          cd /build
+          
+          # Clean any previous build artifacts
+          lb clean --purge
+          
+          # Build the ISO
+          lb build 2>&1 | tee build.log
+          
+          # Check if ISO was created
+          if [ ! -f live-image-amd64.hybrid.iso ]; then
+              echo "ISO build failed!"
+              exit 1
+          fi
+      
+      - name: Prepare ISO for artifact
+        run: |
+          cd /build
+          
+          # Get version from release tag
+          VERSION=${GITHUB_REF_NAME:-latest}
+          
+          # Create a clean ISO filename with version
+          mv live-image-amd64.hybrid.iso "aem-os-${VERSION}.iso"
+          
+          # Create SHA256 checksum
+          sha256sum "aem-os-${VERSION}.iso" > "aem-os-${VERSION}.iso.sha256"
+          
+          # Also save build log
+          cp build.log "aem-os-${VERSION}-build.log" 2>/dev/null || :
+      
+      - name: Upload ISO to release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: /build/aem-os-${{ github.ref_name }}.iso
+          asset_name: aem-os-${{ github.ref_name }}.iso
+          asset_content_type: application/octet-stream
+      
+      - name: Upload checksum to release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: /build/aem-os-${{ github.ref_name }}.iso.sha256
+          asset_name: aem-os-${{ github.ref_name }}.iso.sha256
+          asset_content_type: text/plain
+      
+      - name: Upload build log to release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: /build/aem-os-${{ github.ref_name }}-build.log
+          asset_name: aem-os-${{ github.ref_name }}-build.log
+          asset_content_type: text/plain
+      
+      - name: Upload artifacts (for workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aem-os-iso
+          path: |
+            /build/aem-os-*.iso
+            /build/aem-os-*.iso.sha256
+            /build/aem-os-*-build.log
+          retention-days: 30
