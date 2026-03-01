@@ -39,7 +39,3 @@ AEM OS is built using Debian's `live-build` system, automated entirely through G
 3. Navigate to your repository's **Actions** tab.
 4. Select the **Build ISO Image** workflow and click **Run workflow**.
 5. Once the build succeeds, download your custom `.iso` from the workflow artifacts.
-
----
-
-Would you like me to adjust the tone of this README, or add a section detailing how contributors can help improve the OS?
