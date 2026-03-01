@@ -113,6 +113,12 @@ jobs:
           firmware-linux
           firmware-iwlwifi
           firmware-realtek
+
+          # Bootloader dependencies for Calamares (CRITICAL FIX)
+          grub-efi-amd64
+          grub-pc
+          efibootmgr
+          os-prober
           
           # Minimal GNOME desktop
           gnome-core
@@ -170,7 +176,7 @@ jobs:
 
           # Remove unwanted packages
           apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour yelp gnome-maps malcontent
-          apt-get autoremove
+          apt-get autoremove -y
 
           # Remove unwanted desktop entry(s)
           rm -f /usr/share/applications/kdesystemsettings.desktop
@@ -257,7 +263,7 @@ jobs:
           cat > config/includes.chroot/etc/calamares/modules/users.conf << 'EOF'
           ---
           autologinGroup: autologin
-          doAutologin: true
+          doAutologin: false
           sudoersGroup: sudo
           setRootPassword: true
           doReusePassword: true
@@ -288,6 +294,8 @@ jobs:
           sequence:
             - show:
               - welcome
+              - locale
+              - keyboard
               - users
               - partition
               - summary
@@ -297,6 +305,10 @@ jobs:
               - unpackfs
               - machineid
               - fstab
+              - locale
+              - keyboard
+              - localecfg
+              - hwclock
               - users
               - displaymanager
               - networkcfg
@@ -335,6 +347,20 @@ jobs:
                 - live-tools
                 - calamares
                 - calamares-settings-debian
+          EOF
+
+          # Create locale module (Timezone & Language)
+          cat > config/includes.chroot/etc/calamares/modules/locale.conf << 'EOF'
+          ---
+          region: "America"
+          zone: "New_York"
+          useSystemTimezone: true
+          EOF
+
+          # Create keyboard module
+          cat > config/includes.chroot/etc/calamares/modules/keyboard.conf << 'EOF'
+          ---
+          xkbmodel: "pc105"
           EOF
       
       - name: Create branding
