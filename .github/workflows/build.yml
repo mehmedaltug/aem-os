@@ -367,18 +367,21 @@ jobs:
         run: |
           cd /build
           mkdir -p config/includes.chroot/usr/share/calamares/branding/aem-os
+
+          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${VERSION:-1.0.0}
           
           # Create branding descriptor
-          cat > config/includes.chroot/usr/share/calamares/branding/aem-os/branding.desc << 'EOF'
+          cat > config/includes.chroot/usr/share/calamares/branding/aem-os/branding.desc << EOF
           componentName:  aem-os
           
           strings:
               productName:         AEM OS
               shortProductName:    AEMOS
-              version:             1.0
-              shortVersion:        1.0
-              versionedName:       AEM OS 1.0
-              shortVersionedName:  AEMOS 1.0
+              version:             ${VERSION}
+              shortVersion:        ${VERSION}
+              versionedName:       AEM OS ${VERSION}
+              shortVersionedName:  AEMOS ${VERSION}
               bootloaderEntryName: AEM-OS
               welcomeMessage:      "Welcome to the AEM OS installer."
               aboutMessage:        "Thanks for choosing AEM OS.\n\nThis installer will guide you through the setup process."
