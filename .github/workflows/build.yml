@@ -171,8 +171,18 @@ jobs:
           apt-get remove --purge -y firefox-esr
           apt-get autoremove
           
-          # Download and install Homebrew (non-interactive)
-          echo | NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          # Create the linuxbrew directory
+          mkdir -p /home/linuxbrew/.linuxbrew/Homebrew
+          mkdir -p /home/linuxbrew/.linuxbrew/bin
+          
+          # Clone Homebrew manually (bypassing the root-check installer)
+          git clone https://github.com/Homebrew/brew /home/linuxbrew/.linuxbrew/Homebrew
+          
+          # Symlink the executable
+          ln -s /home/linuxbrew/.linuxbrew/Homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/brew
+          
+          # Open permissions so ANY user (live or installed) can use it
+          chmod -R a+rwx /home/linuxbrew/.linuxbrew
           
           # Set up Homebrew in system profile
           cat > /etc/profile.d/homebrew.sh << 'BREW'
