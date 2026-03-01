@@ -116,6 +116,8 @@ jobs:
           # Minimal GNOME desktop
           gnome-core
           gnome-themes-extra
+          gnome-shell-extension-manager
+          gnome-tweaks
           gdm3
           
           # Printing support
