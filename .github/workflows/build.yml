@@ -84,7 +84,7 @@ jobs:
             --iso-volume "AEM_OS-${VERSION}" \
             --memtest none \
             --mode debian \
-            --parent-distribution bookworm \
+            --parent-distribution trixie \
             --parent-archive-areas "main contrib non-free non-free-firmware" \
             --security true \
             --updates true \
