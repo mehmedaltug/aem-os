@@ -115,8 +115,8 @@ jobs:
           firmware-realtek
 
           # Bootloader dependencies for Calamares (CRITICAL FIX)
-          grub-efi-amd64
-          grub-pc
+          grub-efi-amd64-bin
+          grub-pc-bin
           efibootmgr
           os-prober
           
