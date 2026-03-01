@@ -88,7 +88,8 @@ jobs:
             --parent-archive-areas "main contrib non-free non-free-firmware" \
             --security true \
             --updates true \
-            --cache true
+            --cache true \
+            --bootappend-live "boot=live components autologin"
 
       - name: Verify config directory
         run: |
@@ -203,39 +204,14 @@ jobs:
           EOF
           chmod +x config/hooks/normal/1000-install-flatpak-and-homebrew.chroot
           
-          # Live user creation hook
-          cat > config/hooks/normal/3000-create-live-user.chroot << 'EOF'
-          #!/bin/bash
-          
-          # Create temporary live user
-          useradd -m -s /bin/bash -G sudo,audio,video,cdrom,plugdev,netdev,dialout live
-          echo "live:live" | chpasswd
-          
-          # Allow passwordless sudo for live user
-          echo "live ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/live-user
-          
-          # Set up automatic login for GDM
-          cat > /etc/gdm3/daemon.conf << GDM
-          [daemon]
-          AutomaticLoginEnable=true
-          AutomaticLogin=live
-          WaylandEnable=false
-          GDM
-          EOF
-          chmod +x config/hooks/normal/3000-create-live-user.chroot
-          
           # Skip GNOME initial setup
           cat > config/hooks/normal/4000-skip-gnome-initial-setup.chroot << 'EOF'
           #!/bin/bash
           
-          # Skip GNOME initial setup on first boot
+          # Place the config in the skeleton directory. 
+          # It will automatically copy to the live user AND the installed user!
           mkdir -p /etc/skel/.config
           echo "yes" > /etc/skel/.config/gnome-initial-setup-done
-          
-          # For the live user
-          mkdir -p /home/live/.config
-          echo "yes" > /home/live/.config/gnome-initial-setup-done
-          chown -R live:live /home/live/.config
           EOF
           chmod +x config/hooks/normal/4000-skip-gnome-initial-setup.chroot
       
@@ -320,13 +296,17 @@ jobs:
               - summary
             - exec:
               - partition
+              - mount
+              - unpackfs
+              - machineid
+              - fstab
               - users
+              - displaymanager
               - networkcfg
-              - copy
-              - packages
+              - initramfs
               - grubcfg
               - bootloader
-              - services
+              - packages
               - umount
           
           branding: aem-os
@@ -335,6 +315,29 @@ jobs:
           oem-setup: false
           disable-cancel: false
           quit-at-end: true
+          EOF
+
+          # Create unpackfs module
+          cat > config/includes.chroot/etc/calamares/modules/unpackfs.conf << 'EOF'
+          ---
+          unpack:
+            - source: /run/live/medium/live/filesystem.squashfs
+              sourcefs: squashfs
+              destination: ""
+          EOF
+
+          # Create packages module
+          cat > config/includes.chroot/etc/calamares/modules/packages.conf << 'EOF'
+          ---
+          backend: apt
+          operations:
+            - remove:
+                - live-boot
+                - live-config
+                - live-config-systemd
+                - live-tools
+                - calamares
+                - calamares-settings-debian
           EOF
       
       - name: Create branding
@@ -384,14 +387,10 @@ jobs:
           mkdir -p config/hooks/normal
           cat > config/hooks/normal/5000-desktop-shortcuts.chroot << 'EOF'
           #!/bin/bash
+          
+          # Just make sure it's executable in the skeleton directory.
           if [ -f /etc/skel/Desktop/install-system.desktop ]; then
               chmod +x /etc/skel/Desktop/install-system.desktop
-          fi
-          
-          if [ -d /home/live/Desktop ]; then
-              cp /etc/skel/Desktop/install-system.desktop /home/live/Desktop/
-              chmod +x /home/live/Desktop/install-system.desktop
-              chown -R live:live /home/live/Desktop
           fi
           EOF
           chmod +x config/hooks/normal/5000-desktop-shortcuts.chroot
