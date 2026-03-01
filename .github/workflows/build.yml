@@ -175,8 +175,11 @@ jobs:
           apt-get install -y build-essential curl file git procps
 
           # Remove unwanted packages
-          apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour yelp gnome-maps malcontent
+          apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour yelp gnome-maps malcontent plymouth
           apt-get autoremove -y
+
+          # Remove unwanted service(s)
+          systemctl disable NetworkManager-wait-online.service
 
           # Remove unwanted desktop entry(s)
           rm -f /usr/share/applications/kdesystemsettings.desktop
@@ -262,6 +265,15 @@ jobs:
           # Create users module (THIS IS WHERE USERS SET USERNAME/PASSWORD)
           cat > config/includes.chroot/etc/calamares/modules/users.conf << 'EOF'
           ---
+          defaultGroups:
+            - audio
+            - cdrom
+            - dip
+            - floppy
+            - netdev
+            - plugdev
+            - sudo
+            - video
           autologinGroup: autologin
           doAutologin: false
           sudoersGroup: sudo
