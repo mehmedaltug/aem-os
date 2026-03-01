@@ -188,10 +188,11 @@ jobs:
           # Open permissions so ANY user (live or installed) can use it
           chmod -R a+rwx /home/linuxbrew/.linuxbrew
 
+          # TEMPORARYLY DISABLED DUE TO OWNERSHIP ISSUES
           # Trigger Portable Ruby download
           # We run this as 'nobody' because Homebrew blocks root execution.
           # We use '|| true' so doctor warnings don't fail the build.
-          su -s /bin/bash nobody -c 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && brew doctor' || true
+          # su -s /bin/bash nobody -c 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && brew doctor' || true
           
           # Set up Homebrew in system profile
           cat > /etc/profile.d/homebrew.sh << 'BREW'
@@ -367,6 +368,13 @@ jobs:
               bootloaderEntryName: AEM-OS
               welcomeMessage:      "Welcome to the AEM OS installer."
               aboutMessage:        "Thanks for choosing AEM OS.\n\nThis installer will guide you through the setup process."
+
+          images:
+              productLogo:         ""
+              productIcon:         ""
+              productWelcome:      ""
+
+          slideshow:               []
           
           style:
               sidebarBackground:   "#2c3e50"
