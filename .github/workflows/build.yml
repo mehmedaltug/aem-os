@@ -168,9 +168,12 @@ jobs:
           # Install Homebrew dependencies
           apt-get install -y build-essential curl file git procps
 
-          # Remove Firefox-ESR
-          apt-get remove --purge -y firefox-esr
+          # Remove unwanted packages
+          apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour yelp gnome-maps malcontent
           apt-get autoremove
+
+          # Remove unwanted desktop entry(s)
+          rm -f /usr/share/applications/kdesystemsettings.desktop
           
           # Create the linuxbrew directory
           mkdir -p /home/linuxbrew/.linuxbrew/Homebrew
@@ -184,6 +187,11 @@ jobs:
           
           # Open permissions so ANY user (live or installed) can use it
           chmod -R a+rwx /home/linuxbrew/.linuxbrew
+
+          # Trigger Portable Ruby download
+          # We run this as 'nobody' because Homebrew blocks root execution.
+          # We use '|| true' so doctor warnings don't fail the build.
+          su -s /bin/bash nobody -c 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && brew doctor' || true
           
           # Set up Homebrew in system profile
           cat > /etc/profile.d/homebrew.sh << 'BREW'
