@@ -513,12 +513,12 @@ jobs:
 
           # Compress it to 7z
           7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v1900m "aem-os-${VERSION}.7z" "aem-os-${VERSION}.iso"
-
-          # Remove iso file
-          rm -f "aem-os-${VERSION}.iso"
           
           # Create SHA256 checksum
           sha256sum "aem-os-${VERSION}.iso" > "aem-os-${VERSION}.iso.sha256"
+
+          # Remove iso file
+          rm -f "aem-os-${VERSION}.iso"
           
           # Also save build log
           cp build.log "aem-os-${VERSION}-build.log" 2>/dev/null || :
