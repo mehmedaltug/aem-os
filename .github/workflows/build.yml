@@ -178,7 +178,7 @@ jobs:
           flatpak install -y org.mozilla.firefox
           
           # Install Homebrew dependencies
-          apt-get install -y build-essential curl file git procps
+          apt-get install -y build-essential curl file git procps flatseal
 
           # Remove unwanted packages
           apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour yelp gnome-maps malcontent plymouth gnome-software*
