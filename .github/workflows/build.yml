@@ -232,10 +232,6 @@ jobs:
           # Create welcome module
           cat > config/includes.chroot/etc/calamares/modules/welcome.conf << 'EOF'
           ---
-          name: welcome
-          type: view
-          interface: qtplugin
-          visible: true
           welcomeStyle: SideBySide
           showSupportUrl: false
           showKnownIssuesUrl: false
@@ -260,10 +256,6 @@ jobs:
           # Create users module (THIS IS WHERE USERS SET USERNAME/PASSWORD)
           cat > config/includes.chroot/etc/calamares/modules/users.conf << 'EOF'
           ---
-          name: users
-          type: view
-          interface: qtplugin
-          visible: true
           autologinGroup: autologin
           doAutologin: true
           sudoersGroup: sudo
@@ -279,10 +271,6 @@ jobs:
           # Create partition module
           cat > config/includes.chroot/etc/calamares/modules/partition.conf << 'EOF'
           ---
-          name: partition
-          type: view
-          interface: qtplugin
-          visible: true
           defaultFileSystemType: ext4
           alwaysShowPartitionLabels: true
           allowManualPartitioning: true
@@ -295,7 +283,7 @@ jobs:
           # Create main Calamares settings
           cat > config/includes.chroot/etc/calamares/settings.conf << 'EOF'
           ---
-          modules-search: [ /etc/calamares/modules, /usr/lib/calamares/modules ]
+          modules-search: [ local ]
           
           sequence:
             - show:
