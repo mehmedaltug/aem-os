@@ -26,7 +26,7 @@ By leveraging a traditional mutable base with modern package management paradigm
 
 ## Installation
 
-1. **Download and Extract:** Head to the [Releases](https://github.com/mehmedaltug/aem-os/releases) page and download the highly compressed .7z archive. (Note: If the release contains multiple parts like .7z.001 and .7z.002, download all parts into the same folder). Extract the archive using a tool like  or Peazip to get your .iso file. Be sure to also download the .sha256 checksum to verify the extracted ISO's integrity!
+1. **Download and Extract:** Head to the [Releases](https://github.com/mehmedaltug/aem-os/releases) page and download the highly compressed .7z archive, it is about 2.4GB. (Note: If the release contains multiple parts like .7z.001 and .7z.002, download all parts into the same folder). Extract the archive using a tool like  or Peazip to get your .iso file. Be sure to also download the .sha256 checksum to verify the extracted ISO's integrity!
 2. **Flash to a USB:** Use a tool like BalenaEtcher, Rufus, or `dd` to write the ISO to a USB flash drive.
 3. **Boot & Install:** Boot from the USB. You will enter a Live Environment where you can test the OS. Double-click the **"Install System"** icon on the desktop to launch the Calamares installer and follow the on-screen prompts.
 
