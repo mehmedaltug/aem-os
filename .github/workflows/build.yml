@@ -39,7 +39,8 @@ jobs:
             grub-efi-amd64-bin \
             isolinux \
             syslinux-efi \
-            cpio
+            cpio \
+            p7zip-full
       
       - name: Set up build environment
         run: |
@@ -509,6 +510,12 @@ jobs:
           
           # Create a clean ISO filename with version
           mv live-image-amd64.hybrid.iso "aem-os-${VERSION}.iso"
+
+          # Compress it to 7z
+          7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v1900m "aem-os-${VERSION}.7z" "aem-os-${VERSION}.iso"
+
+          # Remove iso file
+          rm -f "aem-os-${VERSION}.iso"
           
           # Create SHA256 checksum
           sha256sum "aem-os-${VERSION}.iso" > "aem-os-${VERSION}.iso.sha256"
@@ -521,7 +528,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            /build/aem-os-*.iso
+            /build/aem-os-*.7z*
             /build/aem-os-*.iso.sha256
             /build/aem-os-*-build.log
       
@@ -531,7 +538,7 @@ jobs:
         with:
           name: aem-os-iso
           path: |
-            /build/aem-os-*.iso
+            /build/aem-os-*.7z*
             /build/aem-os-*.iso.sha256
             /build/aem-os-*-build.log
           retention-days: 30
