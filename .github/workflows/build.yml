@@ -329,6 +329,8 @@ jobs:
               - bootloader
               - packages
               - umount
+            - show:
+              - finished
           
           branding: aem-os
           prompt-install: true
