@@ -179,10 +179,14 @@ jobs:
           flatpak install -y org.mozilla.firefox
           
           # Install Homebrew dependencies
-          apt-get install -y build-essential curl file git procps flatseal
+          apt-get install -y build-essential curl file git procps flatseal file-roller
+
+          # Post installation actions
+          # - Set file-roller as default
+          grep '^MimeType=' /usr/share/applications/org.gnome.Nautilus.desktop | cut -d'=' -f2 | tr ';' $'\n' | grep -v 'inode/directory' | xargs xdg-mime default org.gnome.FileRoller.desktop
 
           # Remove unwanted packages
-          apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour yelp gnome-maps malcontent plymouth gnome-software*
+          apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour gnome-maps malcontent plymouth gnome-software*
           apt-get autoremove -y
 
           # Remove unwanted service(s)
@@ -190,6 +194,7 @@ jobs:
 
           # Remove unwanted desktop entry(s)
           rm -f /usr/share/applications/kdesystemsettings.desktop
+          rm -f /usr/share/applications/yelp.desktop
           
           # Create the linuxbrew directory
           mkdir -p /home/linuxbrew/.linuxbrew/Homebrew
@@ -209,7 +214,7 @@ jobs:
           chown -R linuxbrew:linuxbrew /home/linuxbrew
 
           # Auto-install Homebrew packages (Add your desired apps here
-          su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install gcc openjdk node npm make git gh"
+          su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install openjdk node npm make git gh"
           
           # Clean up the Homebrew cache
           su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew cleanup"
