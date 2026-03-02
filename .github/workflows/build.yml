@@ -206,6 +206,7 @@ jobs:
 
           # Create the linuxbrew user (CRITICAL FIX)
           useradd -m -s /bin/bash linuxbrew
+          chowm -R linuxbrew:linuxbrew /home/linuxbrew
 
           # Auto-install Homebrew packages (Add your desired apps here
           su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install gcc openjdk node npm make git gh"
@@ -213,6 +214,10 @@ jobs:
           # Clean up the Homebrew cache
           su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew cleanup"
 
+          # Restore permissions:
+          chown -R root:root /home/linuxbrew
+          chmod -R a+rwx /home/linuxbrew/.linuxbrew
+          
           # Remove linuxbrew user (CRITICAL FIX)
           userdel linuxbrew
           
