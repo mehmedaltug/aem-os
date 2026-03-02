@@ -212,6 +212,9 @@ jobs:
           
           # Clean up the Homebrew cache
           su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew cleanup"
+
+          # Remove linuxbrew user (CRITICAL FIX)
+          userdel linuxbrew
           
           # Set up Homebrew in system profile
           cat > /etc/profile.d/homebrew.sh << 'BREW'
