@@ -206,7 +206,7 @@ jobs:
 
           # Create the linuxbrew user (CRITICAL FIX)
           useradd -m -s /bin/bash linuxbrew
-          chowm -R linuxbrew:linuxbrew /home/linuxbrew
+          chown -R linuxbrew:linuxbrew /home/linuxbrew
 
           # Auto-install Homebrew packages (Add your desired apps here
           su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install gcc openjdk node npm make git gh"
