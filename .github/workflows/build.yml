@@ -93,7 +93,8 @@ jobs:
             --security true \
             --updates true \
             --cache true \
-            --bootappend-live "boot=live components autologin"
+            --bootappend-live "boot=live components autologin" \
+            --chroot-squashfs-options "-comp xz -b 1M -Xdict-size 100%"
 
       - name: Verify config directory
         run: |
@@ -146,6 +147,7 @@ jobs:
           curl
           file
           git
+          gh
           python3
           procps
           EOF
@@ -179,7 +181,7 @@ jobs:
           #flatpak install -y org.mozilla.firefox
           
           # Install dependencies
-          apt-get install -y build-essential curl file git procps flatseal file-roller wget
+          apt-get install -y build-essential curl file git procps flatseal file-roller wget make openjdk-25-jdk
 
           # Post installation actions
           # - Set file-roller as default
@@ -226,10 +228,10 @@ jobs:
           chown -R linuxbrew:linuxbrew /home/linuxbrew
 
           # Auto-install Homebrew packages (Add your desired apps here
-          su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install openjdk node npm make git gh"
+          su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install node npm"
           
           # Clean up the Homebrew cache
-          su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew cleanup"
+          su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew cleanup --prune=all"
 
           # Restore permissions:
           chown -R root:root /home/linuxbrew
@@ -267,6 +269,19 @@ jobs:
           echo "yes" > /etc/skel/.config/gnome-initial-setup-done
           EOF
           chmod +x config/hooks/normal/4000-skip-gnome-initial-setup.chroot
+
+          cat > config/hooks/normal/9999-final-cleanup.chroot << 'EOF'
+          #!/bin/bash
+          
+          # Clean APT caches
+          apt-get clean
+          apt-get autoremove --purge -y
+          rm -rf /var/lib/apt/lists/*
+          
+          # Strip English locales to the bare minimum (optional but saves space)
+          find /usr/share/locale -mindepth 1 -maxdepth 1 ! -name 'en*' -exec rm -rf {} +
+          EOF
+          chmod +x config/hooks/normal/9999-final-cleanup.chroot
       
       - name: Create Calamares installer configuration
         run: |
