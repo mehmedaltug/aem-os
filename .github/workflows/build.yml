@@ -93,8 +93,7 @@ jobs:
             --security true \
             --updates true \
             --cache true \
-            --bootappend-live "boot=live components autologin" \
-            --chroot-squashfs-compression-level -extreme
+            --bootappend-live "boot=live components autologin"
 
       - name: Verify config directory
         run: |
