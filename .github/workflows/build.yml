@@ -286,7 +286,6 @@ jobs:
               - ram
               - root
               - screen
-              - power
             requiredStorage: 5.0
             requiredRam: 1.0
             check:
@@ -294,7 +293,6 @@ jobs:
               - ram
               - root
               - screen
-              - power
           EOF
           
           # Create users module (THIS IS WHERE USERS SET USERNAME/PASSWORD)
