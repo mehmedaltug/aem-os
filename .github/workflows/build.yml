@@ -94,7 +94,7 @@ jobs:
             --updates true \
             --cache true \
             --bootappend-live "boot=live components autologin" \
-            --chroot-squashfs-options "-comp xz -b 1M -Xdict-size 100%"
+            --chroot-squashfs-compression-level -extreme
 
       - name: Verify config directory
         run: |
