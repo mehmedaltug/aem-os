@@ -176,14 +176,26 @@ jobs:
           flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo
 
           # Install flatpak app(s)
-          flatpak install -y org.mozilla.firefox
+          #flatpak install -y org.mozilla.firefox
           
-          # Install Homebrew dependencies
-          apt-get install -y build-essential curl file git procps flatseal file-roller
+          # Install dependencies
+          apt-get install -y build-essential curl file git procps flatseal file-roller wget
 
           # Post installation actions
           # - Set file-roller as default
           grep '^MimeType=' /usr/share/applications/org.gnome.Nautilus.desktop | cut -d'=' -f2 | tr ';' $'\n' | grep -v 'inode/directory' | xargs xdg-mime default org.gnome.FileRoller.desktop
+
+          # Install firefox latest
+          sudo install -d -m 0755 /etc/apt/keyrings
+          wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
+          gpg -n -q --import --import-options import-show /etc/apt/keyrings/packages.mozilla.org.asc | awk '/pub/{getline; gsub(/^ +| +$/,""); print "\n"$0"\n"}'
+          echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null
+          echo '
+          Package: *
+          Pin: origin packages.mozilla.org
+          Pin-Priority: 1000
+          ' | sudo tee /etc/apt/preferences.d/mozilla
+          sudo apt update && sudo apt install firefox
 
           # Remove unwanted packages
           apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour gnome-maps malcontent plymouth gnome-software*
