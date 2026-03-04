@@ -528,6 +528,9 @@ jobs:
       - name: Build the ISO
         run: |
           cd /build
+
+          # Export aggressive squashfs compression options
+          export MKSQUASHFS_OPTIONS="-comp xz -b 1M -Xdict-size 100%"
           
           # Build the ISO
           lb build 2>&1 | tee build.log
