@@ -195,7 +195,7 @@ jobs:
           Pin: origin packages.mozilla.org
           Pin-Priority: 1000
           ' | sudo tee /etc/apt/preferences.d/mozilla
-          sudo apt update && sudo apt install firefox
+          sudo apt update && sudo apt install -y firefox
 
           # Remove unwanted packages
           apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour gnome-maps malcontent plymouth gnome-software*
