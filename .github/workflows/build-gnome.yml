@@ -549,16 +549,16 @@ jobs:
           VERSION=${VERSION:-latest}
           
           # Create a clean ISO filename with version
-          mv live-image-amd64.hybrid.iso "aem-os-${VERSION}.iso"
+          mv live-image-amd64.hybrid.iso "aem-os-${VERSION}-gnome.iso"
 
           # Compress it to 7z
-          7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v1900m "aem-os-${VERSION}.7z" "aem-os-${VERSION}.iso"
+          7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v1900m "aem-os-${VERSION}-gnome.7z" "aem-os-${VERSION}-gnome.iso"
           
           # Create SHA256 checksum
-          sha256sum "aem-os-${VERSION}.iso" > "aem-os-${VERSION}.iso.sha256"
+          sha256sum "aem-os-${VERSION}-gnome.iso" > "aem-os-${VERSION}-gnome.iso.sha256"
 
           # Remove iso file
-          rm -f "aem-os-${VERSION}.iso"
+          rm -f "aem-os-${VERSION}-gnome.iso"
       
       - name: Upload Release Assets
         if: github.event_name == 'release'
