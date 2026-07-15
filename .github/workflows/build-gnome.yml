@@ -1,4 +1,4 @@
-name: Build Custom Debian ISO
+name: Build Custom Debian GNOME ISO
 
 on:
   release:
@@ -559,9 +559,6 @@ jobs:
 
           # Remove iso file
           rm -f "aem-os-${VERSION}.iso"
-          
-          # Also save build log
-          cp build.log "aem-os-${VERSION}-build.log" 2>/dev/null || :
       
       - name: Upload Release Assets
         if: github.event_name == 'release'
@@ -570,7 +567,6 @@ jobs:
           files: |
             /build/aem-os-*.7z*
             /build/aem-os-*.iso.sha256
-            /build/aem-os-*-build.log
       
       - name: Upload artifacts (for workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'
@@ -580,5 +576,4 @@ jobs:
           path: |
             /build/aem-os-*.7z*
             /build/aem-os-*.iso.sha256
-            /build/aem-os-*-build.log
           retention-days: 30
