@@ -176,7 +176,7 @@ jobs:
           flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo
           
           # Install dependencies
-          apt-get install -y build-essential curl file git procps flatseal wget make openjdk-25-jdk systemd-timesyncd
+          apt-get install -y build-essential curl file git procps flatseal wget make openjdk-25-jdk systemd-timesyncd xfce4-clipman-plugin
 
           # Sync Time
           systemctl enable --now systemd-timesyncd
