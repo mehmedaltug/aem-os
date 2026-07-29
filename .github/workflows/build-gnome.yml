@@ -171,7 +171,7 @@ jobs:
           #!/bin/bash
           
           # Install dependencies
-          apt-get install -y build-essential curl file git procps flatseal file-roller wget make
+          apt-get install -y build-essential curl file git procps file-roller wget make
 
           # Post installation actions
           # - Set file-roller as default
