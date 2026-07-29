@@ -169,14 +169,8 @@ jobs:
           cat > config/hooks/normal/1000-install-flatpak-and-homebrew.chroot << 'EOF'
           #!/bin/bash
           
-          # Install Flatpak and integration
-          apt-get install -y flatpak
-          
-          # Add Flathub repository
-          flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo
-          
           # Install dependencies
-          apt-get install -y build-essential curl file git procps flatseal wget make openjdk-25-jdk systemd-timesyncd xfce4-clipman-plugin clipman xclip
+          apt-get install -y build-essential curl file git procps flatseal wget make systemd-timesyncd xfce4-clipman-plugin clipman xclip
 
           # Sync Time
           systemctl enable --now systemd-timesyncd
@@ -537,7 +531,7 @@ jobs:
           mv live-image-amd64.hybrid.iso "aem-os-${VERSION}-xfce.iso"
 
           # Compress it to 7z
-          7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v1900m "aem-os-${VERSION}-xfce.7z" "aem-os-${VERSION}-xfce.iso"
+          7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v2000m "aem-os-${VERSION}-xfce.7z" "aem-os-${VERSION}-xfce.iso"
           
           # Create SHA256 checksum
           sha256sum "aem-os-${VERSION}-xfce.iso" > "aem-os-${VERSION}-xfce.iso.sha256"
