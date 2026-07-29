@@ -543,7 +543,7 @@ jobs:
           mv live-image-amd64.hybrid.iso "aem-os-${VERSION}-gnome.iso"
 
           # Compress it to 7z
-          7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v1900m "aem-os-${VERSION}-gnome.7z" "aem-os-${VERSION}-gnome.iso"
+          7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v2000m "aem-os-${VERSION}-gnome.7z" "aem-os-${VERSION}-gnome.iso"
           
           # Create SHA256 checksum
           sha256sum "aem-os-${VERSION}-gnome.iso" > "aem-os-${VERSION}-gnome.iso.sha256"
