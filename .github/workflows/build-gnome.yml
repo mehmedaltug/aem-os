@@ -167,20 +167,11 @@ jobs:
           mkdir -p config/hooks/normal
           
           # Flatpak and Homebrew installation hook
-          cat > config/hooks/normal/1000-install-flatpak-and-homebrew.chroot << 'EOF'
+          cat > config/hooks/normal/1000-install-homebrew.chroot << 'EOF'
           #!/bin/bash
           
-          # Install Flatpak and GNOME integration
-          apt-get install -y flatpak
-          
-          # Add Flathub repository
-          flatpak remote-add --system flathub https://flathub.org/repo/flathub.flatpakrepo
-
-          # Install flatpak app(s)
-          #flatpak install -y org.mozilla.firefox
-          
           # Install dependencies
-          apt-get install -y build-essential curl file git procps flatseal file-roller wget make openjdk-25-jdk
+          apt-get install -y build-essential curl file git procps flatseal file-roller wget make
 
           # Post installation actions
           # - Set file-roller as default
