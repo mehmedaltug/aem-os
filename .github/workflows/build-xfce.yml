@@ -170,7 +170,7 @@ jobs:
           #!/bin/bash
           
           # Install dependencies
-          apt-get install -y build-essential curl file git procps flatseal wget make systemd-timesyncd xfce4-clipman-plugin clipman xclip
+          apt-get install -y build-essential curl file git procps wget make systemd-timesyncd xfce4-clipman-plugin clipman xclip
 
           # Sync Time
           systemctl enable --now systemd-timesyncd
