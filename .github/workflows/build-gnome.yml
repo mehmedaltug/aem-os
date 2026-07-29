@@ -166,7 +166,7 @@ jobs:
           cd /build
           mkdir -p config/hooks/normal
           
-          # Flatpak and Homebrew installation hook
+          # Homebrew installation hook
           cat > config/hooks/normal/1000-install-homebrew.chroot << 'EOF'
           #!/bin/bash
           
@@ -247,7 +247,7 @@ jobs:
           fi
           BASHRC
           EOF
-          chmod +x config/hooks/normal/1000-install-flatpak-and-homebrew.chroot
+          chmod +x config/hooks/normal/1000-install-homebrew.chroot
           
           # Skip GNOME initial setup
           cat > config/hooks/normal/4000-skip-gnome-initial-setup.chroot << 'EOF'
