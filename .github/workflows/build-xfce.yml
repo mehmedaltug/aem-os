@@ -165,8 +165,8 @@ jobs:
           cd /build
           mkdir -p config/hooks/normal
           
-          # Flatpak and Homebrew installation hook
-          cat > config/hooks/normal/1000-install-flatpak-and-homebrew.chroot << 'EOF'
+          # Homebrew installation hook
+          cat > config/hooks/normal/1000-install-homebrew.chroot << 'EOF'
           #!/bin/bash
           
           # Install dependencies
@@ -246,7 +246,7 @@ jobs:
           fi
           BASHRC
           EOF
-          chmod +x config/hooks/normal/1000-install-flatpak-and-homebrew.chroot
+          chmod +x config/hooks/normal/1000-install-homebrew.chroot
 
           cat > config/hooks/normal/9999-final-cleanup.chroot << 'EOF'
           #!/bin/bash
