@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: debian:forky-slim
-      options: --privileged  # Required for some live-build operations
+      options: --privileged  # Required for live-build operations
 
     steps:
       - name: Checkout repository
@@ -40,7 +40,8 @@ jobs:
             isolinux \
             syslinux-efi \
             cpio \
-            p7zip-full
+            p7zip-full \
+            wget
 
       - name: Set up build environment
         run: |
@@ -95,6 +96,27 @@ jobs:
             --cache true \
             --bootappend-live "boot=live components autologin"
 
+      - name: Configure Sid Fallback Repository & Pinning
+        run: |
+          cd /build
+          mkdir -p config/archives
+
+          # Add Sid (unstable) source list for missing packages fallback
+          cat > config/archives/sid.list.chroot << 'EOF'
+          deb http://deb.debian.org/debian sid main contrib non-free non-free-firmware
+          EOF
+
+          # Pin Testing higher so Sid is only used when packages are absent in Testing
+          cat > config/archives/sid.pref.chroot << 'EOF'
+          Package: *
+          Pin: release a=testing
+          Pin-Priority: 900
+
+          Package: *
+          Pin: release a=unstable
+          Pin-Priority: 100
+          EOF
+
       - name: Verify config directory
         run: |
             ls -la /build
@@ -113,12 +135,12 @@ jobs:
           alsa-utils
           sudo
           network-manager
-          network-manager-gnome
+          network-manager-applet
           firmware-linux
           firmware-iwlwifi
           firmware-realtek
 
-          # Bootloader dependencies for Calamares (CRITICAL FIX)
+          # Bootloader dependencies for Calamares
           grub-efi-amd64-bin
           grub-pc-bin
           efibootmgr
@@ -146,7 +168,6 @@ jobs:
           curl
           file
           git
-          gh
           python3
           procps
           EOF
@@ -166,28 +187,34 @@ jobs:
           cd /build
           mkdir -p config/hooks/normal
 
-          # Homebrew installation hook
+          # Homebrew & Third-Party Repositories installation hook
           cat > config/hooks/normal/1000-install-homebrew.chroot << 'EOF'
           #!/bin/bash
 
           # Install dependencies
-          apt-get install -y build-essential curl file git procps file-roller wget make
+          apt-get install -y build-essential curl file git procps file-roller wget make gpg
 
-          # Post installation actions
-          # - Set file-roller as default
+          # Post installation actions - Set file-roller as default
           grep '^MimeType=' /usr/share/applications/org.gnome.Nautilus.desktop | cut -d'=' -f2 | tr ';' $'\n' | grep -v 'inode/directory' | xargs xdg-mime default org.gnome.FileRoller.desktop
 
-          # Install firefox latest
-          sudo install -d -m 0755 /etc/apt/keyrings
-          wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
+          # Add Mozilla Firefox official APT repository
+          mkdir -p -m 0755 /etc/apt/keyrings
+          wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | tee /etc/apt/keyrings/packages.mozilla.org.asc > /dev/null
           gpg -n -q --import --import-options import-show /etc/apt/keyrings/packages.mozilla.org.asc | awk '/pub/{getline; gsub(/^ +| +$/,""); print "\n"$0"\n"}'
-          echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee /etc/apt/sources.list.d/mozilla.list > /dev/null
+          echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | tee /etc/apt/sources.list.d/mozilla.list > /dev/null
           echo '
           Package: *
           Pin: origin packages.mozilla.org
           Pin-Priority: 1000
-          ' | sudo tee /etc/apt/preferences.d/mozilla
-          sudo apt update && sudo apt install -y firefox
+          ' | tee /etc/apt/preferences.d/mozilla
+
+          # Add official GitHub CLI (gh) repository
+          wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null
+          chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+
+          # Update APT and install Firefox & GitHub CLI
+          apt-get update && apt-get install -y firefox gh
 
           # Remove unwanted packages
           apt-get remove --purge -y firefox-esr gnome-contacts gnome-tour gnome-maps malcontent plymouth gnome-software*
@@ -210,24 +237,24 @@ jobs:
           # Symlink the executable
           ln -s /home/linuxbrew/.linuxbrew/Homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/brew
 
-          # Open permissions so ANY user (live or installed) can use it
+          # Open permissions so ANY user can use it
           chmod -R a+rwx /home/linuxbrew/.linuxbrew
 
-          # Create the linuxbrew user (CRITICAL FIX)
+          # Create the linuxbrew user
           useradd -m -s /bin/bash linuxbrew
           chown -R linuxbrew:linuxbrew /home/linuxbrew
 
-          # Auto-install Homebrew packages (Add your desired apps here)
+          # Auto-install Homebrew packages
           su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install node npm"
 
           # Clean up the Homebrew cache
           su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew cleanup --prune=all"
 
-          # Restore permissions:
+          # Restore permissions
           chown -R root:root /home/linuxbrew
           chmod -R a+rwx /home/linuxbrew/.linuxbrew
 
-          # Remove linuxbrew user (CRITICAL FIX)
+          # Remove linuxbrew user
           userdel linuxbrew
 
           # Set up Homebrew in system profile
@@ -239,7 +266,7 @@ jobs:
           BREW
           chmod +x /etc/profile.d/homebrew.sh
 
-          # Also add to bash.bashrc for interactive shells
+          # Add to bash.bashrc for interactive shells
           cat >> /etc/bash.bashrc << 'BASHRC'
           # Homebrew
           if [ -d /home/linuxbrew/.linuxbrew ] && [ -n "$BASH_VERSION" ]; then
@@ -252,23 +279,17 @@ jobs:
           # Skip GNOME initial setup
           cat > config/hooks/normal/4000-skip-gnome-initial-setup.chroot << 'EOF'
           #!/bin/bash
-
-          # Place the config in the skeleton directory. 
-          # It will automatically copy to the live user AND the installed user!
           mkdir -p /etc/skel/.config
           echo "yes" > /etc/skel/.config/gnome-initial-setup-done
           EOF
           chmod +x config/hooks/normal/4000-skip-gnome-initial-setup.chroot
 
+          # Final cleanup hook
           cat > config/hooks/normal/9999-final-cleanup.chroot << 'EOF'
           #!/bin/bash
-
-          # Clean APT caches
           apt-get clean
           apt-get autoremove --purge -y
           rm -rf /var/lib/apt/lists/*
-
-          # Strip English locales to the bare minimum (optional but saves space)
           find /usr/share/locale -mindepth 1 -maxdepth 1 ! -name 'en*' -exec rm -rf {} +
           EOF
           chmod +x config/hooks/normal/9999-final-cleanup.chroot
@@ -300,7 +321,7 @@ jobs:
               - screen
           EOF
 
-          # Create users module (THIS IS WHERE USERS SET USERNAME/PASSWORD)
+          # Create users module
           cat > config/includes.chroot/etc/calamares/modules/users.conf << 'EOF'
           ---
           defaultGroups:
@@ -402,7 +423,7 @@ jobs:
                 - calamares-settings-debian
           EOF
 
-          # Create locale module (Timezone & Language)
+          # Create locale module
           cat > config/includes.chroot/etc/calamares/modules/locale.conf << 'EOF'
           ---
           region: "America"
@@ -416,7 +437,7 @@ jobs:
           xkbmodel: "pc105"
           EOF
 
-          # Create shellprocess module to clean up the desktop icon
+          # Create shellprocess module
           cat > config/includes.chroot/etc/calamares/modules/shellprocess.conf << 'EOF'
           ---
           dontChroot: false
@@ -433,7 +454,6 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           VERSION=${VERSION:-1.0.0}
 
-          # Create custom OS release info for GNOME and system fetch tools
           mkdir -p config/includes.chroot/usr/lib
           cat > config/includes.chroot/usr/lib/os-release << EOF
           PRETTY_NAME="AEM OS ${VERSION}-testing"
@@ -445,10 +465,8 @@ jobs:
           ID_LIKE=debian
           EOF
 
-          # Copy it to /etc/os-release to ensure strict compatibility
           cp config/includes.chroot/usr/lib/os-release config/includes.chroot/etc/os-release
 
-          # Update the TTY terminal login prompts too
           cat > config/includes.chroot/etc/issue << EOF
           AEM OS ${VERSION}-testing \n \l
 
@@ -458,7 +476,6 @@ jobs:
           AEM OS ${VERSION}-testing
           EOF
 
-          # Create branding descriptor
           cat > config/includes.chroot/usr/share/calamares/branding/aem-os-testing/branding.desc << EOF
           componentName:  aem-os-testing
 
@@ -503,12 +520,9 @@ jobs:
           StartupNotify=true
           EOF
 
-          # Make executable in hook
           mkdir -p config/hooks/normal
           cat > config/hooks/normal/5000-desktop-shortcuts.chroot << 'EOF'
           #!/bin/bash
-
-          # Just make sure it's executable in the skeleton directory.
           if [ -f /etc/skel/Desktop/install-system.desktop ]; then
               chmod +x /etc/skel/Desktop/install-system.desktop
           fi
@@ -518,14 +532,10 @@ jobs:
       - name: Build the ISO
         run: |
           cd /build
-
-          # Export aggressive squashfs compression options
           export MKSQUASHFS_OPTIONS="-comp xz -b 1M -Xdict-size 100%"
 
-          # Build the ISO
           lb build 2>&1 | tee build.log
 
-          # Check if ISO was created
           if [ ! -f live-image-amd64.hybrid.iso ]; then
               echo "ISO build failed!"
               exit 1
@@ -534,21 +544,12 @@ jobs:
       - name: Prepare ISO for artifact
         run: |
           cd /build
-
-          # Get version from release tag and strip the 'v'
           VERSION=${GITHUB_REF_NAME#v}
           VERSION=${VERSION:-latest}
 
-          # Create a clean ISO filename with version and testing postfix
           mv live-image-amd64.hybrid.iso "aem-os-${VERSION}-gnome-testing.iso"
-
-          # Compress it to 7z
           7z a -t7z -m0=lzma2 -mx=9 -md=128m -mfb=256 -v2000m "aem-os-${VERSION}-gnome-testing.7z" "aem-os-${VERSION}-gnome-testing.iso"
-
-          # Create SHA256 checksum
           sha256sum "aem-os-${VERSION}-gnome-testing.iso" > "aem-os-${VERSION}-gnome-testing.iso.sha256"
-
-          # Remove iso file
           rm -f "aem-os-${VERSION}-gnome-testing.iso"
 
       - name: Upload Release Assets
