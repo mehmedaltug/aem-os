@@ -131,7 +131,7 @@ jobs:
           kscreen
           powerdevil
           ark
-          spectacle
+          kde-spectacle
           gwenview
           breeze-gtk-theme
           kde-config-gtk-style
