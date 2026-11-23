@@ -11,6 +11,7 @@ By leveraging a traditional mutable base with modern package management paradigm
 * **Choose Your Desktop Environment:** AEM OS avoids the bloat of standard desktop environments. It is available in two streamlined flavors:
   * **Minimal GNOME:** Ships with `gnome-core` and essential tweaks, stripping out unnecessary tours, contacts apps, and games to keep your system fast and responsive.
   * **Lightweight XFCE:** Ships with a highly optimized `xfce4` and `xfce4-goodies` setup alongside the `lightdm` display manager for an ultra-responsive, resource-efficient experience.
+  * **Customizeable Plasma:** Ships a stripped down `kde-plasma-desktop` and `sddm` display manager that is suitable for most users.
 * **Hardware & Printing Ready:** Networking (Wi-Fi/Realtek firmware) and printing are fully pre-configured. CUPS and `system-config-printer` are baked in, meaning your printers should "just work" without hours of troubleshooting.
 * **Streamlined Installation:** Powered by the modern Calamares installer, getting AEM OS onto your hardware is fast and graphical, complete with LUKS encryption support.
 
@@ -20,7 +21,7 @@ By leveraging a traditional mutable base with modern package management paradigm
 | --- | --- |
 | **Base System** | Debian Trixie (slim) |
 | **Architecture** | `amd64` |
-| **Desktop Environment** | **GNOME:** Minimal (`gdm3`, `gnome-core`) <br> **XFCE:** Lightweight (`lightdm`, `xfce4`, `xfce4-goodies`) |
+| **Desktop Environment** | **GNOME** <br> **XFCE** <br> **PLASMA** |
 | **Package Managers** | `apt`, `brew` |
 | **Bootloader** | GRUB (EFI and Legacy PC support) |
 | **Installer** | Calamares (Custom AEM OS Branding) |
